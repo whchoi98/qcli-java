@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Rolling out the EC2 instances to get the latest version of the Launch Template ..."
+      - |
+        aws autoscaling start-instance-refresh --auto-scaling-group-name webapp --preferences '{"InstanceWarmup": 300, "MinHealthyPercentage": 90}'
+  build:
+    commands:
+      - echo "Waiting for Instance Refresh to complete..."
+      - |
+        while true; do
+          REFRESH_STATE=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name webapp --query 'InstanceRefreshes[0].Status' --output text)
+          echo "Current state: $REFRESH_STATE"
+          if [ "$REFRESH_STATE" = "Successful" ]; then
+            echo "Instance refresh completed successfully."
+            break
+          elif [ "$REFRESH_STATE" = "Failed" ]; then
+            echo "Instance refresh failed."
+            exit 1
+          fi
+          sleep 30
+        done
+  post_build:
+    commands:
+      - echo "Auto Scaling group Instance Refresh completed."
+        

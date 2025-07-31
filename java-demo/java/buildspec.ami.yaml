@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - |
+        echo "Starting Image Builder pipeline execution..."
+        IMAGE_BUILD_VERSION_ARN=$(aws imagebuilder start-image-pipeline-execution --image-pipeline-arn $ami_build_pipeline --query 'imageBuildVersionArn' --output text)
+        echo "Image build version ARN: $IMAGE_BUILD_VERSION_ARN"
+  build:
+    commands:
+      - echo "Waiting for Image Builder pipeline to complete..."
+      - |
+        while true; do
+          IMAGE_STATE=$(aws imagebuilder get-image --image-build-version-arn $IMAGE_BUILD_VERSION_ARN --query 'image.state.status' --output text)          
+          echo "Current image state: $IMAGE_STATE"
+          if [ "$IMAGE_STATE" = "AVAILABLE" ]; then
+            echo "Image build completed successfully."
+            break
+          elif [ "$IMAGE_STATE" = "FAILED" ]; then
+            echo "Image build failed."
+            exit 1
+          fi
+          sleep 60
+        done
+      - echo "Updating the SSM Parameter..."
+      - |
+        AMI_ID=$(aws imagebuilder get-image --image-build-version-arn $IMAGE_BUILD_VERSION_ARN --query 'image.outputResources.amis[0].image' --output text)
+        aws ssm put-parameter --name $ssm_ami --value $AMI_ID --type String --overwrite
+  post_build:
+    commands:
+      - echo "Image Builder pipeline execution completed."

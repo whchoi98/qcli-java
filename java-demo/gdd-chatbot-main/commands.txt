@@ -1,0 +1,11 @@
+sudo apt  install cmake build-essential
+git clone https://github.com/ggerganov/llama.cpp -b b3145
+
+# rewrite CMakeLists.txt with CPU arch ref
+
+cmake -B build
+cmake --build build --config Release
+
+sudo cp build/libchatbot-amd64.so /usr/lib
+OR
+sudo cp build/libchatbot-arm64.so /usr/lib

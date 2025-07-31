@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing app dependencies...
+      - curl -LO https://dl.k8s.io/release/v1.30.2/bin/linux/amd64/kubectl   
+      - chmod +x ./kubectl
+      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      - source ~/.bashrc
+      - echo 'Check kubectl version'
+      - kubectl version --short --client
+    
+  build:
+    commands:        
+      - IMAGE_REPO_NAME=$ECR_URL
+      - sed -i 's@CONTAINER_IMAGE@'"$IMAGE_REPO_NAME:$IMAGE_TAG"'@' manifests/deploy.yaml
+      - sed -i "s/APP_VCPUS/$APP_VCPUS/g" manifests/deploy.yaml
+      - sed -i "s/APP_MEMORY/$APP_MEMORY/g" manifests/deploy.yaml
+      - aws eks update-kubeconfig --name $eks_cluster --region $region
+      - kubectl apply -f manifests/deploy.yaml
+      - kubectl wait --for=condition=available deployments javaapp
+      - kubectl rollout restart deployment javaapp
+      - kubectl get svc
