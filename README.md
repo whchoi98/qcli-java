@@ -141,28 +141,49 @@ curl -X POST -H "Content-Type: application/json" \
 
 ## 🛠️ Q CLI 활용 사례
 
-### 1. 코드 분석 및 최적화
+### 1단계: Java 프로그램을 Graviton에 맞게 수정
 ```bash
-# Q CLI를 사용하여 코드 분석
-q chat "이 Java 애플리케이션을 Graviton으로 전환하는 방법을 알려줘"
+q chat "나는 현재 x86 아키텍처의 EC2 인스턴스에서 컨테이너를 통해 배포되고 있는 Java 애플리케이션을 보유하고 있습니다.
+Java 애플리케이션의 소스 코드는 \"~/qcli-java/\" 디렉토리에 저장되어 있습니다.
+이 애플리케이션을 AWS Graviton3 인스턴스로 마이그레이션하기 위해, Java 소스 코드를 평가하고 필요한 수정 사항을 확인해주세요.
+코드 수정이 완료된 후에는, 소스 코드와 Dockerfile이 x86_64 및 arm64 인스턴스 모두에서 빌드될 수 있도록 구성되어 있는지 확인해주세요.
+수정을 승인하면, 코드 변경을 진행해주시고, 수정된 모든 파일은 백업해주시기 바랍니다. 
+수행한 내용과 결과를 markdown으로 작성해서 \"~/qcli-java/report\" 디렉토리에 저장해 주세요."
 ```
 
-### 2. 빌드 스크립트 생성
+### 2단계: Graviton3 인스턴스 시작
 ```bash
-# 멀티 아키텍처 빌드 스크립트 생성 요청
-q chat "Docker 멀티 아키텍처 빌드를 위한 buildspec.yaml을 작성해줘"
+q chat "ap-northeast-2 리전, DMZVPC, DMZVPC-Private-Subnet-A 에 다음 조건으로 c7g.xlarge 인스턴스를 구성해주세요.
+- 볼륨 : 80GB gp3 EBS 볼륨
+- 운영 체제는 Amazon Linux 2023
+- 기존 생성된 Security Group Name :  \"PrivateEC2SG\" 를 사용
+- 생성된 EC2 c7g.xlarge에 Session Manager를 연결할 수 있도록 구성
+- 기존 생성된 Session Manager Role이 있으면 활용
+인스턴스가 정상적으로 시작되면, 이후 단계를 진행할 예정입니다.
+수행한 내용과 결과를 markdown으로 작성해서 \"~/qcli-java/report\" 디렉토리에 저장해 주세요."
 ```
 
-### 3. 성능 최적화 가이드
+### 3단계: ARM64용 라이브러리 파일 컴파일
 ```bash
-# Graviton 최적화 방법 문의
-q chat "Java 애플리케이션의 Graviton 성능 최적화 방법을 알려줘"
+q chat "이 인스턴스에서 libchatbot-arm64.so 라이브러리 파일을 컴파일해주시기 바랍니다.
+libchatbot의 소스 코드는 로컬 디렉터리 gdd-chatbot-main/chatbot.cpp에 있으며, 이 파일은 수정하지 마세요.
+소스 코드 디렉터리에 있는 commands.txt와 CMakeLists.txt를 참고하여, 앞단계에서 시작한 c7g 인스턴스에서 libchatbot-arm64.so를 빌드할 수 있습니다.
+빌드가 완료되면, 해당 라이브러리 파일을 로컬의 java/chatbot-libs 디렉터리로 다운로드해주시기 바랍니다.
+이 디렉터리에는 이미 amd64 아키텍처용 .so 파일이 포함되어 있습니다.
+수행한 내용과 결과를 markdown으로 작성해서 \"~/qcli-java/report\" 디렉토리에 저장해 주세요."
 ```
 
-### 4. 문제 해결 지원
+### 4단계: Graviton 인스턴스에서 컨테이너 실행
 ```bash
-# 네이티브 라이브러리 로딩 문제 해결
-q chat "JNA에서 ARM64 라이브러리 로딩 실패 시 해결 방법은?"
+q chat "java 디렉토리에 있는 애플리케이션을 생성한 c7g.xlarge 인스턴스에 컨테이너 형태로 배포해주시기 바랍니다.
+수행한 내용과 결과를 markdown으로 작성해서 \"~/qcli-java/report\" 디렉토리에 저장해 주세요."
+```
+
+### 5단계: 챗봇 기능 검증
+```bash
+q chat "다음 명령어를 사용하여 챗 기능을 검증해주시기 바랍니다:
+\"curl -X POST -H \\\"Content-Type: application/json\\\" -d '{\\\"Prompt\\\":\\\"AWS Graviton processors에 대해서 알려줘.\\\", \\\"Tokens\\\":50}' http://localhost:8081/generateResponse\"
+수행한 내용과 결과를 markdown으로 작성해서 \"~/qcli-java/report\" 디렉토리에 저장해 주세요."
 ```
 
 ## 📦 배포 옵션
